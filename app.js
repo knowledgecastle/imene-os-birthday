@@ -570,7 +570,7 @@
         setTimeout(() => {
           bar.animate([{ width: "0%" }, { width: "100%" }], { duration: 420, easing: "ease-out", fill: "forwards" })
             .onfinish = () => { el.classList.add("done"); sound.tick(); };
-        }, 150 + i * 230);
+        }, 150 + i * 110);
       });
     }
     state.skills = true; save();
@@ -694,7 +694,7 @@
     ["ls clients", "28 major clients, add --builds or --consultations"],
     ["cd clients/<industry>", "open one case card (tab completes)"],
     ["open templates", "the template shelf"],
-    ["open community", "teaching in Darija and Arabic"],
+    ["open community", "teaching an Arabic-speaking community"],
     ["brew list --learned", "skills installed this year"],
     ["cat lessons.txt", "four lessons"],
     ["open apps", "two apps I vibecoded and shipped"],
