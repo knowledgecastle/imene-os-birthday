@@ -19,6 +19,15 @@ window.CONTENT = {
   },
 
   // Lofi scene per theme. Swap these files to change the room.
+  // Background music, off until the visitor clicks Sound.
+  // Drop a royalty-free or licensed MP3 at this path. If the file is missing,
+  // the site falls back to a generated rain ambience.
+  music: {
+    src: "assets/music/lofi.mp3",
+    title: "arabic jazz, side a", // shown in the dock while it plays
+    volume: 0.35,
+  },
+
   backgrounds: {
     light: "assets/bg/lofi-day.jpg",
     dark: "assets/bg/lofi-night.jpg",

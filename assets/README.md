@@ -9,6 +9,7 @@ Drop these files in and the site picks them up. Anything missing shows a placeho
 | `templates/cover-1.jpg` to `cover-6.jpg` | Template covers | 4:3, 3 to 6 files. Edit the list in `content.js` if you use other names |
 | `clients/<slug>.jpg` | Optional anonymized screenshot per full build | Blur names first. Slugs are listed below |
 | `apps/timetracker-screenshot.jpg`, `apps/screenhero-screenshot.jpg` | Optional app screenshots | 16:10. Hidden until the files exist. App icons are already in `apps/` |
+| `music/lofi.mp3` | Background music, looped when a visitor turns Sound on | Royalty-free or licensed only. Change the path, title or volume in `content.js` under `music`. Missing file falls back to rain |
 | `og-image.png` | 1200x630 share image | A first version is generated from the desktop layout |
 | `bg/lofi-day.jpg` | Light theme scene (sunset room) | Swap in `content.js` under `backgrounds` |
 | `bg/lofi-night.jpg` | Dark theme scene (rainy night room) | Same |

@@ -155,13 +155,53 @@
       if (on) {
         if (!ensure()) return;
         ac.resume();
-        if (!amb) amb = ambience();
         tone(660, 0.15, 0.05);
-      } else if (amb) {
-        const a = amb; amb = null;
-        a.g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
-        setTimeout(() => a.src.stop(), 400);
+        startMusic();
+      } else {
+        stopMusic();
+        stopAmbience();
       }
+    }
+
+    // Background music: the MP3 from content.js, looped and faded.
+    // If the file is missing or blocked, fall back to the generated rain.
+    const M = C.music || {};
+    let track = null, trackBroken = !M.src, fade = 0;
+    function fadeTo(target, ms, done) {
+      clearInterval(fade);
+      const step = (target - track.volume) / Math.max(1, ms / 50);
+      fade = setInterval(() => {
+        const v = track.volume + step;
+        if ((step >= 0 && v >= target) || (step < 0 && v <= target)) {
+          track.volume = target; clearInterval(fade); done && done();
+        } else track.volume = Math.min(1, Math.max(0, v));
+      }, 50);
+    }
+    function startMusic() {
+      if (trackBroken) { useAmbience(); return; }
+      if (!track) {
+        track = new Audio(M.src);
+        track.loop = true; track.preload = "auto"; track.volume = 0;
+        track.addEventListener("error", () => { trackBroken = true; if (on) useAmbience(); }, { once: true });
+      }
+      $("#nowPlaying").textContent = "♪ " + (M.title || "now playing");
+      const p = track.play();
+      if (p && p.catch) p.catch(() => { trackBroken = true; if (on) useAmbience(); });
+      fadeTo(M.volume || 0.35, 1500);
+    }
+    function stopMusic() {
+      if (!track || track.paused) return;
+      fadeTo(0, 500, () => track.pause());
+    }
+    function useAmbience() {
+      $("#nowPlaying").textContent = "♪ lofi rain, side b";
+      if (!amb) amb = ambience();
+    }
+    function stopAmbience() {
+      if (!amb) return;
+      const a = amb; amb = null;
+      a.g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
+      setTimeout(() => a.src.stop(), 400);
     }
     return {
       toggle() { set(!on); },
