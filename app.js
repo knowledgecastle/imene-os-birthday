@@ -176,9 +176,10 @@
     function startMusic() {
       if (trackBroken) { useAmbience(); return; }
       if (!track) {
-        track = new Audio(M.src);
-        track.loop = true; track.preload = "auto"; track.volume = 0;
+        track = $("#bgm");
+        track.volume = 0;
         track.addEventListener("error", () => { trackBroken = true; if (on) useAmbience(); }, { once: true });
+        track.src = M.src;
       }
       const p = track.play();
       const playing = () => { waiting = false; np.textContent = "♪ " + (M.title || "now playing"); fadeTo(vol, 1500); };
@@ -214,13 +215,16 @@
       } else { stopMusic(); stopAmbience(); }
     }
 
-    // first real interaction anywhere unlocks audio (the Sound button handles itself)
+    // Browsers only allow sound after a real click, tap or key press.
+    // Every such gesture retries while the music should play but isn't.
     function unlock(e) {
       if (!on || (e.target && e.target.closest && e.target.closest("#soundBtn"))) return;
       if (ac && ac.state !== "running") ac.resume();
-      if (waiting) startMusic();
+      if (!trackBroken && track && track.paused) startMusic();
+      else if (trackBroken && !amb) useAmbience();
     }
-    ["pointerdown", "keydown", "touchstart"].forEach((ev) => document.addEventListener(ev, unlock, { capture: true, passive: true }));
+    ["pointerdown", "pointerup", "mousedown", "click", "keydown", "touchend"].forEach((ev) =>
+      document.addEventListener(ev, unlock, { capture: true, passive: true }));
 
     slider.value = Math.round(vol * 100);
     slider.addEventListener("input", () => {
@@ -228,6 +232,7 @@
       store.set("volume", vol);
       slider.setAttribute("aria-valuetext", slider.value + "%");
       if (track && !track.paused) { clearInterval(fade); track.volume = vol; }
+      else if (on && track && !trackBroken) startMusic(); // the slider is a gesture too
       if (amb) amb.g.gain.setTargetAtTime(vol * 0.26, ac.currentTime, 0.05);
     });
     slider.setAttribute("aria-valuetext", slider.value + "%");
@@ -360,6 +365,7 @@
     el.dataset.id = id;
     el.innerHTML =
       `<div class="win-bar"><div class="win-title" id="${titleId}">${icon(meta.icon, 15)}<span>${esc(meta.title)}</span></div>` +
+      `<button class="win-min" type="button" aria-label="Minimize ${esc(meta.title)}" aria-expanded="true">${icon("minus", 16)}</button>` +
       `<button class="win-close" type="button" aria-label="Close ${esc(meta.title)}">${icon("x", 16)}</button></div>` +
       `<div class="win-body"></div>`;
     $("#windows").appendChild(el);
@@ -372,6 +378,15 @@
     place(el);
     focusWin(el);
     $(".win-close", el).addEventListener("click", () => closeWindow(id));
+    const minBtn = $(".win-min", el);
+    const toggleMin = () => {
+      const min = el.classList.toggle("minimized");
+      minBtn.innerHTML = icon(min ? "maximize-2" : "minus", 16);
+      minBtn.setAttribute("aria-label", `${min ? "Restore" : "Minimize"} ${meta.title}`);
+      minBtn.setAttribute("aria-expanded", String(!min));
+    };
+    minBtn.addEventListener("click", toggleMin);
+    $(".win-bar", el).addEventListener("dblclick", (e) => { if (!e.target.closest("button")) toggleMin(); });
     el.addEventListener("pointerdown", () => focusWin(el));
     drag(el);
     requestAnimationFrame(() => $(".win-close", el).focus({ preventScroll: true }));
@@ -679,7 +694,7 @@
       `<p class="kicker">$ ls ~/apps · ${esc(w.kicker)}</p><div class="apps">` +
       w.list.map((a) =>
         `<article class="app">` +
-        `<header class="app-head">${pic(a.iconImage, "app-icon", a.name + " app icon")}` +
+        `<header class="app-head">${a.iconImage ? pic(a.iconImage, "app-icon", a.name + " app icon") : `<span class="app-icon app-tile">${icon(a.iconName || "app-window", 28)}</span>`}` +
         `<div><h3>${esc(a.name)}</h3><span class="tag">${esc(a.tag)}</span></div></header>` +
         (a.screenshot ? `<img class="app-shot" src="${esc(a.screenshot)}" alt="${esc(a.name)} screenshot" loading="lazy">` : "") +
         `<p class="app-tagline">${esc(a.tagline)}</p>` +
@@ -775,7 +790,7 @@
     ["open community", "teaching an Arabic-speaking community"],
     ["brew list --learned", "skills installed this year"],
     ["cat lessons.txt", "four lessons"],
-    ["open apps", "two apps I vibecoded and shipped"],
+    ["open apps", "apps and a dashboard I vibecoded"],
     ["stats", "headline numbers"],
     ["achievements", "the trophy shelf"],
     ["date", "locked until you explore"],
@@ -950,7 +965,9 @@
     if (finaleActive) return;
     finaleActive = true; finaleTyping = true;
     closeAll();
+    termCtl.show();
     const term = $("#terminal");
+    term.classList.remove("min", "max");
     term.classList.add("takeover");
     document.body.classList.add("finale");
     $("#termRestore").hidden = false;
@@ -1019,6 +1036,84 @@
     }
   }
 
+  /* ---------- terminal window controls: close, minimize, maximize, drag ---------- */
+  const termCtl = (function () {
+    const term = $("#terminal"), bar = $(".term-bar", term);
+    const minB = $("#termMinBtn"), maxB = $("#termMaxBtn"), dockB = $("#termDockBtn");
+    dockB.innerHTML = icon("square-terminal", 16) + "<span>Terminal</span>";
+    dockB.setAttribute("aria-label", "Show terminal");
+
+    function show() {
+      term.hidden = false;
+      dockB.setAttribute("aria-pressed", "true");
+    }
+    function hide() {
+      if (finaleActive) return;
+      term.hidden = true;
+      dockB.setAttribute("aria-pressed", "false");
+      dockB.focus({ preventScroll: true });
+    }
+    function setMin(min) {
+      term.classList.toggle("min", min);
+      if (min) term.classList.remove("max");
+      minB.setAttribute("aria-label", min ? "Restore terminal" : "Minimize terminal");
+      minB.setAttribute("aria-expanded", String(!min));
+      syncMax();
+    }
+    function syncMax() {
+      const max = term.classList.contains("max");
+      maxB.setAttribute("aria-pressed", String(max));
+      maxB.setAttribute("aria-label", max ? "Restore terminal size" : "Maximize terminal");
+    }
+    function toggleMax() {
+      if (finaleActive) return;
+      term.classList.remove("min");
+      term.classList.toggle("max");
+      setMin(false);
+    }
+    function reset() {
+      term.classList.remove("min", "max", "floating");
+      term.removeAttribute("style");
+      show(); setMin(false);
+    }
+
+    $("#termCloseBtn").addEventListener("click", hide);
+    minB.addEventListener("click", () => setMin(!term.classList.contains("min")));
+    maxB.addEventListener("click", toggleMax);
+    bar.addEventListener("dblclick", (e) => { if (!e.target.closest("button")) toggleMax(); });
+    dockB.addEventListener("click", () => {
+      show(); setMin(false);
+      input.focus({ preventScroll: true });
+    });
+
+    // drag by the title bar (desktop only)
+    let sx, sy, ox, oy, dragging = false;
+    bar.addEventListener("pointerdown", (e) => {
+      if (isMobile() || e.button !== 0 || e.target.closest("button") || finaleActive || term.classList.contains("max")) return;
+      const r = term.getBoundingClientRect();
+      if (!term.classList.contains("floating")) {
+        term.style.width = r.width + "px";
+        if (!term.classList.contains("min")) term.style.height = r.height + "px";
+        term.classList.add("floating");
+      }
+      term.style.left = r.left + "px"; term.style.top = r.top + "px";
+      dragging = true; sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const x = Math.max(-term.offsetWidth + 100, Math.min(window.innerWidth - 100, ox + e.clientX - sx));
+      const y = Math.max(44, Math.min(window.innerHeight - 44, oy + e.clientY - sy));
+      term.style.left = x + "px"; term.style.top = y + "px";
+    });
+    const end = () => { dragging = false; };
+    bar.addEventListener("pointerup", end);
+    bar.addEventListener("pointercancel", end);
+
+    show();
+    return { show, reset };
+  })();
+
   /* ---------- boot ---------- */
   let booted = false;
 
@@ -1085,6 +1180,7 @@
   $("#restartBtn").addEventListener("click", () => {
     if (finaleActive) endFinale();
     closeAll();
+    termCtl.reset();
     store.clear();
     loadState();
     renderIcons(); renderProgress(); renderTrophy();

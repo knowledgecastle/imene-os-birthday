@@ -241,7 +241,7 @@ window.CONTENT = {
       label: "shipped-apps",
       title: "~/apps",
       command: "open apps",
-      summary: "2 apps vibecoded with Claude Code this year, both in daily use.",
+      summary: "3 things vibecoded with Claude Code this year: two apps and a client dashboard.",
       kicker: "built with Claude Code, used every day",
       list: [
         {
@@ -257,6 +257,20 @@ window.CONTENT = {
             "A Notion-style interface in light and dark, with a time log grouped by day and a daily report.",
             "A game layer on iPhone: XP, levels and daily quests, so focus feels like progress.",
             "Bring your own Notion: it ships with no data and no credentials.",
+          ],
+        },
+        {
+          slug: "ecommerce-dashboard",
+          name: "E-commerce Analytics Dashboard",
+          iconName: "chart-no-axes-combined", // no app icon, drawn as a tile
+          tag: "Client build",
+          platforms: ["Shopify", "ShipHero", "Loop"],
+          tagline: "Tells an ecommerce brand the day it will run out of stock, and when to book the next order.",
+          points: [
+            "Connects Shopify sales, ShipHero warehouse stock and Loop subscription renewals into one live view.",
+            "Walks forward day by day for 180 days, adding inbound shipments as they land, to find the stockout date.",
+            "Works back from freight lead time to a safe and a latest book-by date for the next purchase order.",
+            "Sizes air freight only to patch a real gap, and offers three order-size scenarios, from survival to full cover.",
           ],
         },
         {
@@ -399,7 +413,7 @@ window.CONTENT = {
     ["hours of video", "100+"],
     ["community members", "150"],
     ["custom Claude skills", "20+"],
-    ["apps vibecoded and shipped", "2"],
+    ["apps and dashboards vibecoded", "3"],
   ],
 
   achievements: [

@@ -57,7 +57,11 @@
 
     <section class="terminal" id="terminal" aria-label="Terminal">
       <div class="term-bar">
-        <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="lights">
+          <button type="button" class="light l-close" id="termCloseBtn" aria-label="Close terminal"></button>
+          <button type="button" class="light l-min" id="termMinBtn" aria-label="Minimize terminal" aria-expanded="true"></button>
+          <button type="button" class="light l-max" id="termMaxBtn" aria-label="Maximize terminal" aria-pressed="false"></button>
+        </span>
         <span class="term-title mono" id="termTitle"></span>
         <button class="term-close" id="termRestore" type="button" hidden aria-label="Close finale">×</button>
       </div>
@@ -77,6 +81,7 @@
   </main>
 
   <footer class="dock" aria-label="Dock">
+    <button class="dock-btn" id="termDockBtn" type="button"></button>
     <button class="dock-btn" id="restartBtn" type="button"></button>
     <button class="dock-btn" id="themeBtn" type="button"></button>
     <button class="dock-btn" id="soundBtn" type="button" aria-pressed="false"></button>
@@ -87,6 +92,7 @@
     <span class="now-playing mono" id="nowPlaying" hidden>♪ lofi rain, side b</span>
   </footer>
 
+  <audio id="bgm" loop preload="auto" hidden></audio>
   <div class="windows" id="windows"></div>
   <div class="toasts" id="toasts" aria-live="polite"></div>
   <div class="confetti" id="confetti" aria-hidden="true"></div>
