@@ -6,7 +6,6 @@ Drop these files in and the site picks them up. Anything missing shows a placeho
 | --- | --- | --- |
 | `portrait.jpg` | Portrait for the whoami window | Square works best, shown as a 120px circle |
 | `community-live.jpg` | A live community session | Around 16:8, shown full width |
-| `templates/cover-1.jpg` to `cover-6.jpg` | Template covers | 4:3, 3 to 6 files. Edit the list in `content.js` if you use other names |
 | `clients/<slug>.jpg` | Optional anonymized screenshot per full build | Blur names first. Slugs are listed below |
 | `apps/timetracker-screenshot.jpg`, `apps/screenhero-screenshot.jpg` | Optional app screenshots | 16:10. Hidden until the files exist. App icons are already in `apps/` |
 | `music/lofi.mp3` | Background music, looped when a visitor turns Sound on | Royalty-free or licensed only. Change the path, title or volume in `content.js` under `music`. Missing file falls back to rain |

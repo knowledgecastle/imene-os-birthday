@@ -113,24 +113,30 @@
     return { sync };
   })();
 
-  /* ---------- sound (off by default, only after a click) ---------- */
+  /* ---------- sound: music on by default, starts on the first interaction ---------- */
   const sound = (function () {
+    const M = C.music || {};
     let ac = null, on = false, amb = null;
+    let vol = Math.min(1, Math.max(0, store.get("volume", M.volume != null ? M.volume : 0.35)));
+    let track = null, trackBroken = !M.src, waiting = false, fade = 0;
+    const np = $("#nowPlaying"), btn = $("#soundBtn"), slider = $("#volume");
+
     function ensure() {
       if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ac = new A(); }
       return ac;
     }
-    function tone(freq, dur, vol, type) {
-      if (!on || !ac) return;
+    function tone(freq, dur, v, type) {
+      if (!on || !ac || ac.state !== "running") return;
       const o = ac.createOscillator(), g = ac.createGain();
       o.type = type || "sine"; o.frequency.value = freq;
       g.gain.setValueAtTime(0, ac.currentTime);
-      g.gain.linearRampToValueAtTime(vol, ac.currentTime + 0.01);
+      g.gain.linearRampToValueAtTime(v, ac.currentTime + 0.01);
       g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
       o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur + 0.02);
     }
+
+    // fallback: brown noise through a low-pass, soft rain on a window
     function ambience() {
-      // brown noise through a low-pass: soft rain on a window
       const len = ac.sampleRate * 4, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
       let last = 0;
       for (let i = 0; i < len; i++) {
@@ -141,32 +147,22 @@
       const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
       const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100;
       const g = ac.createGain(); g.gain.value = 0;
-      g.gain.linearRampToValueAtTime(0.09, ac.currentTime + 1.2);
+      g.gain.linearRampToValueAtTime(vol * 0.26, ac.currentTime + 1.2);
       src.connect(lp).connect(g).connect(ac.destination); src.start();
       return { src, g };
     }
-    function set(v) {
-      on = v;
-      const btn = $("#soundBtn");
-      btn.setAttribute("aria-pressed", String(on));
-      btn.innerHTML = icon(on ? "volume-2" : "volume-x", 16) + `<span>Sound ${on ? "on" : "off"}</span>`;
-      btn.setAttribute("aria-label", on ? "Turn sound off" : "Turn sound on");
-      $("#nowPlaying").hidden = !on;
-      if (on) {
-        if (!ensure()) return;
-        ac.resume();
-        tone(660, 0.15, 0.05);
-        startMusic();
-      } else {
-        stopMusic();
-        stopAmbience();
-      }
+    function useAmbience() {
+      np.textContent = "♪ lofi rain, side b";
+      if (ensure() && !amb) amb = ambience();
+    }
+    function stopAmbience() {
+      if (!amb) return;
+      const a = amb; amb = null;
+      a.g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
+      setTimeout(() => a.src.stop(), 400);
     }
 
-    // Background music: the MP3 from content.js, looped and faded.
-    // If the file is missing or blocked, fall back to the generated rain.
-    const M = C.music || {};
-    let track = null, trackBroken = !M.src, fade = 0;
+    // music: the MP3 from content.js, looped and faded
     function fadeTo(target, ms, done) {
       clearInterval(fade);
       const step = (target - track.volume) / Math.max(1, ms / 50);
@@ -184,28 +180,61 @@
         track.loop = true; track.preload = "auto"; track.volume = 0;
         track.addEventListener("error", () => { trackBroken = true; if (on) useAmbience(); }, { once: true });
       }
-      $("#nowPlaying").textContent = "♪ " + (M.title || "now playing");
       const p = track.play();
-      if (p && p.catch) p.catch(() => { trackBroken = true; if (on) useAmbience(); });
-      fadeTo(M.volume || 0.35, 1500);
+      const playing = () => { waiting = false; np.textContent = "♪ " + (M.title || "now playing"); fadeTo(vol, 1500); };
+      if (!p || !p.then) { playing(); return; }
+      p.then(playing).catch((err) => {
+        if (err && err.name === "NotAllowedError") {
+          // the browser wants a click or key press first
+          waiting = true; np.textContent = "♪ click anywhere to start the music";
+        } else { trackBroken = true; if (on) useAmbience(); }
+      });
     }
     function stopMusic() {
+      waiting = false;
       if (!track || track.paused) return;
       fadeTo(0, 500, () => track.pause());
     }
-    function useAmbience() {
-      $("#nowPlaying").textContent = "♪ lofi rain, side b";
-      if (!amb) amb = ambience();
+
+    function render() {
+      btn.setAttribute("aria-pressed", String(on));
+      btn.innerHTML = icon(on ? "volume-2" : "volume-x", 16) + `<span>Sound ${on ? "on" : "off"}</span>`;
+      btn.setAttribute("aria-label", on ? "Turn sound off" : "Turn sound on");
+      np.hidden = !on;
+      $("#volWrap").hidden = !on;
     }
-    function stopAmbience() {
-      if (!amb) return;
-      const a = amb; amb = null;
-      a.g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
-      setTimeout(() => a.src.stop(), 400);
+    function set(v, user) {
+      on = v;
+      if (user) store.set("sound", on);
+      render();
+      if (on) {
+        if (ensure()) ac.resume();
+        tone(660, 0.15, 0.05);
+        startMusic();
+      } else { stopMusic(); stopAmbience(); }
     }
+
+    // first real interaction anywhere unlocks audio (the Sound button handles itself)
+    function unlock(e) {
+      if (!on || (e.target && e.target.closest && e.target.closest("#soundBtn"))) return;
+      if (ac && ac.state !== "running") ac.resume();
+      if (waiting) startMusic();
+    }
+    ["pointerdown", "keydown", "touchstart"].forEach((ev) => document.addEventListener(ev, unlock, { capture: true, passive: true }));
+
+    slider.value = Math.round(vol * 100);
+    slider.addEventListener("input", () => {
+      vol = slider.value / 100;
+      store.set("volume", vol);
+      slider.setAttribute("aria-valuetext", slider.value + "%");
+      if (track && !track.paused) { clearInterval(fade); track.volume = vol; }
+      if (amb) amb.g.gain.setTargetAtTime(vol * 0.26, ac.currentTime, 0.05);
+    });
+    slider.setAttribute("aria-valuetext", slider.value + "%");
+
     return {
-      toggle() { set(!on); },
-      init() { set(false); },
+      toggle() { set(!on, true); },
+      init() { set(!OG && store.get("sound", M.autoplay !== false), false); },
       blip(f) { tone(f || 440, 0.12, 0.04); },
       tick() { tone(1800 + Math.random() * 400, 0.025, 0.012, "triangle"); },
     };
@@ -325,7 +354,7 @@
     const meta = W[id] || META[id];
     const el = document.createElement("div");
     const titleId = "wt-" + id;
-    el.className = "win" + (["clients", "skills", "apps"].includes(id) ? " wide" : "");
+    el.className = "win" + (["clients", "skills", "apps", "templates"].includes(id) ? " wide" : "");
     el.setAttribute("role", "dialog");
     el.setAttribute("aria-labelledby", titleId);
     el.dataset.id = id;
@@ -580,11 +609,20 @@
   function renderTemplates(body) {
     const w = W.templates;
     body.innerHTML =
-      `<div class="strip" tabindex="0" aria-label="Template covers">${w.pictures.map((p, i) => pic(p, "", `Template cover ${i + 1}`)).join("")}</div>` +
       statsHTML(w.stats) +
       `<p>${esc(w.text)}</p>` +
-      `<p class="kicker" style="margin-top:16px">new this year</p><ul class="list">${w.newThisYear.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
-    wirePics(body);
+      `<p class="kicker" style="margin-top:18px">all templates · ${w.list.length}</p>` +
+      `<div class="tpl-grid">` +
+      w.list.map((t) =>
+        `<a class="tpl" href="${esc(w.pageBase + t.slug)}" target="_blank" rel="noopener">` +
+        `<span class="tpl-img">${pic(t.image, "", t.name + " Notion template cover")}</span>` +
+        `<span class="tpl-body"><strong>${esc(t.name)}</strong><small>${esc(t.desc)}</small>` +
+        `<span class="tpl-cta">${esc(w.cta.label)} ${icon("arrow-right", 13)}</span></span></a>`
+      ).join("") +
+      `</div>` +
+      `<p class="kicker" style="margin-top:18px">new this year</p><ul class="list">${w.newThisYear.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
+      `<p style="margin:18px 0 0"><a class="btn" href="${esc(w.cta.href)}" target="_blank" rel="noopener">${icon("layout-template", 15)}${esc(w.cta.all)}</a></p>`;
+    wirePics(body, () => icon("layout-template", 26));
     countUp(body);
   }
 

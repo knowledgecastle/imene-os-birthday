@@ -19,13 +19,16 @@ window.CONTENT = {
   },
 
   // Lofi scene per theme. Swap these files to change the room.
-  // Background music, off until the visitor clicks Sound.
+  // Background music. With autoplay on it starts on the visitor's first click
+  // or key press (browsers block sound before that). Visitors can mute it and
+  // set the volume from the dock; both choices are remembered.
   // Drop a royalty-free or licensed MP3 at this path. If the file is missing,
   // the site falls back to a generated rain ambience.
   music: {
     src: "assets/music/lofi.mp3",
     title: "arabic jazz, side a", // shown in the dock while it plays
-    volume: 0.35,
+    volume: 0.35, // default volume, 0 to 1
+    autoplay: true,
   },
 
   backgrounds: {
@@ -102,14 +105,54 @@ window.CONTENT = {
       title: "templates",
       command: "open templates",
       summary: "21,000+ downloads from 1,600+ organizations. Top Creator, April 2026.",
-      pictures: [
-        "assets/templates/cover-1.jpg",
-        "assets/templates/cover-2.jpg",
-        "assets/templates/cover-3.jpg",
-        "assets/templates/cover-4.jpg",
-        "assets/templates/cover-5.jpg",
-        "assets/templates/cover-6.jpg",
+      // Every template on thedigicrafters.com/templates, same cover images as the site.
+      // To add one: copy a line, set the slug from its page URL and the image id from Framer.
+      list: [
+        { slug: "project-management-made-easy", name: "Project Management Made Easy", image: "https://framerusercontent.com/images/nMk8QbgFv5y8Iqzi4Tmp5wGEleM.webp?scale-down-to=1024",
+          desc: "Manage projects, track tasks and hit every deadline, without the noise." },
+        { slug: "the-complete-life-planner", name: "The Complete Life Planner", image: "https://framerusercontent.com/images/g3pWFETKsqYM6QYE34CAl9XhzY.webp?scale-down-to=1024",
+          desc: "Tasks, goals, habits, budget and journal connected in one dashboard, with an Eisenhower matrix." },
+        { slug: "thanksgiving-menu-planner", name: "Thanksgiving Menu Planner", image: "https://framerusercontent.com/images/6geDmQRtz9urlKCpI4N66s7KJI.webp?scale-down-to=1024",
+          desc: "Plan every dish by course, assign who brings what, and shop from a list sorted by aisle." },
+        { slug: "fall-thanksgiving-recipes-planner", name: "Fall & Thanksgiving Recipes Planner", image: "https://framerusercontent.com/images/a1gY1llbPJxzUVyMwqvXnv9yk.webp?scale-down-to=1024",
+          desc: "200+ fall recipes filtered by course, dietary need, cook time and servings, with a cooking tracker." },
+        { slug: "adhd-planner", name: "ADHD Planner", image: "https://framerusercontent.com/images/6OVvO2QkPQbuEJto1NtV3wIdltY.webp?scale-down-to=1024",
+          desc: "Capture anything in one click, match tasks to your energy, and see one thing to do next." },
+        { slug: "halloween-event-planner", name: "Halloween Event Planner", image: "https://framerusercontent.com/images/dMzfy4qcGEEydO1pYryINt58s.webp?scale-down-to=1024",
+          desc: "Events, tasks, menu, activities and a guest list with RSVPs in one Halloween dashboard." },
+        { slug: "automated-agency-2026", name: "Automated Agency 2026", image: "https://framerusercontent.com/images/dtKIZAmNR4IuP5e6u2Cl2Yiycg.webp?scale-down-to=1024",
+          desc: "Run your agency from one connected system: clients, projects, tasks and handoffs." },
+        { slug: "brain-backup-for-busy-owners", name: "Brain Backup for Busy Owners", image: "https://framerusercontent.com/images/zFNZyhfXUx0w5QHbvWVd4XPSI.webp?scale-down-to=1024",
+          desc: "Capture ideas, tasks, reminders and decisions in one place, so busy owners can clear their mind." },
+        { slug: "personal-portfolio-website-2026", name: "Personal Portfolio Website 2026", image: "https://framerusercontent.com/images/qbC7sOJ0jLlXbHzk3HGCpnPLGEs.webp?scale-down-to=1024",
+          desc: "A clean Notion portfolio for your work, services, testimonials, videos and articles." },
+        { slug: "business-workspace-audit-checklist", name: "Business Workspace Audit Checklist", image: "https://framerusercontent.com/images/4qJwX7HjdbRYu8Gq52KJ1vcoRgA.webp?scale-down-to=1024",
+          desc: "Audit your workspace with a 50+ item checklist and get a clear fix list." },
+        { slug: "content-repurposing-system", name: "Content Repurposing System", image: "https://framerusercontent.com/images/ziwhQkUty8O4LzZatseWFspAk.webp?scale-down-to=1024",
+          desc: "Turn one post, video or podcast into many platform-ready pieces." },
+        { slug: "monthly-budget-tracker-2026", name: "Monthly Budget Tracker 2026", image: "https://framerusercontent.com/images/3PL0FU5qzgu1aEgs6SkVEQetD70.webp?scale-down-to=1024",
+          desc: "One clear monthly view of where everything goes, in a simple Notion tracker." },
+        { slug: "smart-bookmark-tracker", name: "Smart Bookmark Tracker", image: "https://framerusercontent.com/images/IKne6yDMkR83k7PWh59qfBx6bA.webp?scale-down-to=1024",
+          desc: "Save, tag and rediscover links, articles, tools and resources in one library." },
+        { slug: "hr-investigations-tracker", name: "HR Investigations Tracker", image: "https://framerusercontent.com/images/9Vr4yCcchmx61GcR14LwZcnXjc.webp?scale-down-to=1024",
+          desc: "Track HR cases, evidence, actions, status and follow-ups in one organized tracker." },
+        { slug: "refrigerator-freezer-manager", name: "Refrigerator & Freezer Inventory Tracker", image: "https://framerusercontent.com/images/N3G0S5cVB9NquTvQVsEVnZw2s8s.webp?scale-down-to=1024",
+          desc: "Track stock, expiration dates and shopping needs, so you buy smarter and waste less." },
+        { slug: "the-startup-data-room-2026", name: "The Startup Data Room 2026", image: "https://framerusercontent.com/images/IDmvCQAaLjIDgxFvgKevefWt7LY.webp?scale-down-to=1024",
+          desc: "Investor materials, founder info and key company files in one organized data room." },
+        { slug: "coach-command-center", name: "Coach Command Center", image: "https://framerusercontent.com/images/oq02TzH035r3VHldrqDWnuW0pSw.webp?scale-down-to=1024",
+          desc: "Coaching clients, sessions, notes, resources and follow-ups in one clean dashboard." },
+        { slug: "tiktok-content-creator-os", name: "TikTok Content Creator OS", image: "https://framerusercontent.com/images/dDXrU0mV427gRNRwpTCzsQ1AhmI.webp?scale-down-to=1024",
+          desc: "Ideas, scripts, posts, a content calendar and performance in one creator workspace." },
+        { slug: "personal-chef-digital-kitchen", name: "Personal Chef Digital Kitchen", image: "https://framerusercontent.com/images/HdFTYP5zjOkbKTskKquRpuCMaDs.webp?scale-down-to=1024",
+          desc: "Clients, bookings, menus, ingredients and shopping lists in one digital kitchen." },
+        { slug: "the-minimalist-lightweight-crm", name: "The Minimalist CRM", image: "https://framerusercontent.com/images/Fg1nJyTjlDPf5nmkY8hpJwoM9xI.webp?scale-down-to=1024",
+          desc: "Track customers, leads and follow-ups without a complicated setup." },
+        { slug: "meeting-notes-tracker", name: "Meeting Notes Tracker", image: "https://framerusercontent.com/images/w3v43pTb8i0agM0NDuRQrFk33Q8.webp?scale-down-to=1024",
+          desc: "Notes, decisions and action items in one system, so follow-ups stop getting lost." },
       ],
+      pageBase: "https://thedigicrafters.com/templates/",
+      cta: { label: "Get template", all: "Browse all templates", href: "https://thedigicrafters.com/templates" },
       stats: [
         { value: 21000, suffix: "+", label: "downloads" },
         { value: 1600, suffix: "+", label: "organizations" },
