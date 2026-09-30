@@ -289,7 +289,7 @@ window.CONTENT = {
       label: "birthday",
       title: "date",
       command: "date",
-      unlockAfter: 7,
+      unlockAfter: 0, // 0 = always open; the icon shows the letter below
       lockedLine: "unlock by exploring {n} more folders",
       lockedCommand: "locked: explore more of the year first",
       script: [
@@ -301,6 +301,37 @@ window.CONTENT = {
         { out: "Happy birthday to me!", accent: true },
       ],
       question: "Where does your business still depend on you remembering everything?",
+      // The letter shown when someone clicks Birthday (and after the `date` finale).
+      letter: {
+        file: "a-letter-from-34.txt",
+        title: "A letter from 34",
+        intro: [
+          "Thirty-four years old now. It's been a long ride on planet Earth, and I can't complain.",
+          "My goals are still not fully achieved. But this year I stopped doubting the direction, and I know now I'm on the right path.",
+        ],
+        sections: [
+          { heading: "What this year taught me", items: [
+            "Structure protects you better than effort. Working harder never saved me; better systems did.",
+            "A clean no is a gift. Every project I turned down made room for one that mattered.",
+            "Teaching is the fastest way to learn. Every session I gave taught me something I didn't know I knew.",
+            "The tools change every month. Curiosity is the only skill that doesn't expire.",
+            "Rest is part of the work. My most productive months came right after I allowed myself to slow down.",
+          ] },
+          { heading: "Fun facts from my year", items: [
+            "I moved 2,400 Apple Notes into one Notion database in under 20 minutes. It was the most satisfying Tuesday of the year.",
+            "At my biggest live session, 250+ of the 450 people joined an hour late. I've decided to take that as a compliment.",
+            "My most downloaded template is a budget tracker. Apparently the whole world wants to know where their money goes.",
+            "I wrote 20+ skills so Claude remembers how I work. Some days it remembers better than I do.",
+            "I built my own time-tracking app. I still lose track of time.",
+            "I can now code any tool I want. It still feels like magic.",
+          ] },
+          { heading: "Thank you", text: "To every client who trusted me with the messy middle of their business. To my community and followers. And to the people who stayed close, even from far away. You made this year." },
+          { heading: "What's next", text: "More systems, more teaching, more building in public, and a few plans I'm keeping secret until they're real." },
+        ],
+        outro: "Thanks for exploring my year. If you made it all the way here, send me a note before you go.",
+        signature: "Imene",
+        cta: { label: "Wish me happy birthday or send a note", href: "https://spiky-mitten-71e.notion.site/3eb1b281faac80d78211ec2535459c2e?pvs=105" },
+      },
       cta: { label: "Book a discovery call → thedigicrafters.com", href: "https://thedigicrafters.com" },
     },
   },
@@ -476,6 +507,9 @@ window.CONTENT = {
     { id: "easter-egg", icon: "egg", title: "Easter Egg", desc: "Find the hidden file" },
     { id: "year-complete", icon: "award", title: "Year Complete", desc: "Unlock the birthday finale" },
   ],
+
+  // Birthday shower that falls on the desktop each time the site opens.
+  birthdayShower: ["🎈", "🎂", "🎉", "🎁", "🥳", "✨", "🍰", "🎊"],
 
   // "Wish me happy birthday" button, bottom right above the chat. Opens the Notion form.
   wish: {

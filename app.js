@@ -339,10 +339,12 @@
     apps: renderApps,
     achievements: renderAchievements,
     finale: renderFinaleCard,
+    letter: renderLetter,
   };
   const META = {
     achievements: { title: "achievements", icon: "trophy" },
     finale: { title: "v2026", icon: "cake" },
+    letter: { title: C.windows.birthday.letter.file, icon: "cake" },
   };
 
   function openWindow(id, opts) {
@@ -360,7 +362,7 @@
     const meta = W[id] || META[id];
     const el = document.createElement("div");
     const titleId = "wt-" + id;
-    el.className = "win" + (["clients", "skills", "apps", "templates"].includes(id) ? " wide" : "");
+    el.className = "win" + (["clients", "skills", "apps", "templates"].includes(id) ? " wide" : "") + (id === "letter" ? " letter-win" : "");
     el.setAttribute("role", "dialog");
     el.setAttribute("aria-labelledby", titleId);
     el.dataset.id = id;
@@ -427,7 +429,7 @@
     open.delete(id);
     rec.el.classList.add("closing");
     setTimeout(() => rec.el.remove(), reduced ? 0 : 140);
-    if (id === "finale") endFinale();
+    if (id === "finale" || id === "letter") endFinale();
     const next = topWin();
     if (next) { focusWin(next.el); }
     const target = rec.opener && document.contains(rec.opener) ? rec.opener : (next ? $(".win-close", next.el) : $("#termInput"));
@@ -838,6 +840,22 @@
     wireShare(body);
   }
 
+  function renderLetter(body) {
+    const L = W.birthday.letter;
+    body.innerHTML =
+      `<article class="letter">` +
+      `<p class="kicker">$ cat ${esc(L.file)}</p>` +
+      `<h2>${esc(L.title)}</h2>` +
+      L.intro.map((p) => `<p>${esc(p)}</p>`).join("") +
+      L.sections.map((s) => `<h3>${esc(s.heading)}</h3>` +
+        (s.items ? `<ul class="list">${s.items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p>${esc(s.text)}</p>`)).join("") +
+      `<p class="letter-outro">${esc(L.outro)}</p>` +
+      `<p class="signature">${esc(L.signature)}</p>` +
+      `<p class="letter-cta"><a class="btn" href="${esc(L.cta.href)}" target="_blank" rel="noopener">${icon("party-popper", 16)}${esc(L.cta.label)} ${icon("arrow-right", 14)}</a></p>` +
+      `</article>`;
+    $(".letter-cta a", body).addEventListener("click", () => confetti());
+  }
+
   function renderFinaleCard(body) {
     const w = W.birthday;
     body.innerHTML =
@@ -1050,7 +1068,17 @@
   /* ---------- birthday finale ---------- */
   let finaleActive = false, finaleTyping = false;
 
+  // Birthday: clicking the icon opens the letter right away; typing `date` plays the finale first.
+  function openLetter(opts) {
+    markVisited("birthday");
+    confetti();
+    sound.blip(880);
+    openWindow("letter", { via: "click", opener: (opts && opts.opener) || null });
+    earn("year-complete");
+  }
+
   function tryFinale(opts) {
+    if (!(opts && opts.via === "type") && unlocked()) return openLetter(opts);
     if (!unlocked()) {
       const b = document.querySelector('.icon[data-win="birthday"]');
       if (b) { b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); }
@@ -1095,7 +1123,7 @@
     confetti();
     await sleep(reduced ? 0 : 1600);
     if (!finaleActive) return;
-    openWindow("finale", { via: "type", opener: input });
+    openWindow("letter", { via: "type", opener: input });
   }
 
   function endFinale() {
@@ -1332,6 +1360,43 @@
     };
   })();
 
+  // Birthday shower on the desktop: emoji and paper confetti falling from the top.
+  function birthdayShower() {
+    if (reduced || OG) return;
+    const box = $("#confetti");
+    const items = C.birthdayShower || ["🎈", "🎂", "🎉"];
+    const colors = ["#D97757", "#F2C48D", "#E8A08A", "#9CC49A", "#9DB4D0"];
+    const n = isMobile() ? 34 : 64;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement("span");
+      const emoji = i % 3 !== 2; // two thirds emoji, one third paper confetti
+      if (emoji) {
+        s.textContent = items[Math.floor(Math.random() * items.length)];
+        s.style.fontSize = 18 + Math.random() * 20 + "px";
+      } else {
+        s.className = "paper";
+        s.style.background = colors[Math.floor(Math.random() * colors.length)];
+        s.style.width = 6 + Math.random() * 6 + "px";
+        s.style.height = 10 + Math.random() * 8 + "px";
+      }
+      s.style.left = Math.random() * 100 + "vw";
+      box.appendChild(s);
+      const drift = (Math.random() - 0.5) * 160;
+      const spin = (Math.random() - 0.5) * (emoji ? 120 : 900);
+      const delay = Math.random() * 1400;
+      const dur = 2600 + Math.random() * 1600;
+      s.animate(
+        [
+          { transform: "translate(0, 0) rotate(0deg)", opacity: 0 },
+          { opacity: 1, offset: 0.08 },
+          { opacity: 1, offset: 0.8 },
+          { transform: `translate(${drift}px, ${window.innerHeight + 80}px) rotate(${spin}deg)`, opacity: 0 },
+        ],
+        { duration: dur, delay, easing: "cubic-bezier(.3,.5,.5,1)", fill: "both" }
+      ).onfinish = () => s.remove();
+    }
+  }
+
   /* ---------- boot ---------- */
   let booted = false;
 
@@ -1356,6 +1421,7 @@
     if (!isMobile() && !OG) input.focus({ preventScroll: true });
     resetIdle();
     chat.nudge();
+    setTimeout(birthdayShower, reduced ? 0 : 350);
   }
 
   async function boot(force) {
