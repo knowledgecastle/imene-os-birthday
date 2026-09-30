@@ -470,6 +470,7 @@
   // Escape closes the top window; Tab stays inside the focused dialog.
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (chat.isOpen()) { e.preventDefault(); chat.close(); return; }
       const t = topWin();
       if (t) { e.preventDefault(); closeWindow(t.el.dataset.id); return; }
       if (finaleActive) { e.preventDefault(); endFinale(); }
@@ -528,7 +529,7 @@
     const w = W.whoami;
     body.innerHTML =
       `<div class="who">${pic(w.picture, "portrait", w.name)}<div>` +
-      `<p class="kicker">$ whoami</p><h2>${esc(w.name)}</h2>` +
+      `<p class="kicker">$ cat my-bio</p><h2>${esc(w.name)}</h2>` +
       w.lines.map((l) => `<p>${esc(l)}</p>`).join("") +
       `<p class="kicker" style="margin-top:14px">languages</p><div class="langs">${w.languages.map((l) => `<span class="chip" ${/[؀-ۿ]/.test(l) ? 'lang="ar" dir="rtl"' : ""}>${esc(l)}</span>`).join("")}</div>` +
       `<a class="btn" href="${esc(w.link.href)}" target="_blank" rel="noopener">${icon("external-link", 15)}${esc(w.link.label)}</a>` +
@@ -582,14 +583,14 @@
         return;
       }
       const tagCls = c.tag === "In progress" ? "progress" : c.type === "consult" ? "consult" : "";
-      const media = c.type === "build" ? pic(`assets/clients/${c.slug}.jpg`, "", `Anonymized view of the ${c.industry} build`) : icon(c.icon, 44);
+      const media = c.picture ? pic(c.picture, "", `Anonymized view of the ${c.industry} build`)
+        : c.preview ? miniWorkspace(c) : icon(c.icon, 44);
       detail.innerHTML =
-        `<div class="media">${media}</div>` +
+        `<div class="media${c.preview && !c.picture ? " has-mini" : ""}">${media}</div>` +
         `<h3>${esc(c.industry)}</h3><span class="tag ${tagCls}">${esc(c.tag)}</span>` +
         `<dl class="dl"><dt>what I built</dt><dd>${esc(c.built)}</dd><dt>the change</dt><dd>${esc(c.change)}</dd></dl>` +
         `<p class="kicker" style="margin:14px 0 0">~/clients/${esc(c.slug)}</p>`;
-      wirePics(detail, () => icon(c.icon, 44));
-      // missing picture: show the icon large, no dashed box
+      wirePics(detail, () => (c.preview ? miniWorkspace(c) : icon(c.icon, 44)));
       detail.querySelectorAll(".media .ph").forEach((p) => { p.className = ""; });
     }
     function select(slug, fromUser) {
@@ -619,6 +620,21 @@
       if (o.filter) { filter = o.filter; drawFolders(); }
       if (o.slug) { if (o.slug && !C.clients.find((c) => c.slug === o.slug && (filter === "all" || c.type === filter))) filter = "all"; select(o.slug); }
     };
+  }
+
+  // A tiny Notion-style window of what was built: sidebar hubs + a table or a board.
+  function miniWorkspace(c) {
+    const p = c.preview;
+    const side = p.hubs.map((h, i) => `<li class="${i === 0 ? "on" : ""}"><i></i>${esc(h)}</li>`).join("");
+    const pill = (txt, st) => `<span class="st st-${st || "todo"}">${esc(txt)}</span>`;
+    const view = p.lanes
+      ? `<div class="mini-board">${p.lanes.map(([t, cards]) =>
+          `<div class="lane"><span class="lane-t">${esc(t)} <b>${cards.length}</b></span>${cards.map((x) => `<span class="card-m">${esc(x)}</span>`).join("")}</div>`).join("")}</div>`
+      : `<table class="mini-table"><thead><tr><th>${esc(p.cols[0])}</th><th>${esc(p.cols[1])}</th></tr></thead><tbody>` +
+        p.rows.map(([a, b, st]) => `<tr><td>${esc(a)}</td><td>${pill(b, st)}</td></tr>`).join("") + `</tbody></table>`;
+    return `<div class="mini" role="img" aria-label="Preview of the ${esc(p.title)} workspace: ${esc(p.hubs.join(", "))}">` +
+      `<div class="mini-bar" aria-hidden="true"><span class="mini-dots"><i></i><i></i><i></i></span><span class="mini-title">${icon(c.icon, 12)}${esc(p.title)}</span></div>` +
+      `<div class="mini-main" aria-hidden="true"><ul class="mini-side">${side}</ul><div class="mini-view"><span class="mini-h">${esc(p.title)}</span>${view}</div></div></div>`;
   }
 
   function renderTemplates(body) {
@@ -774,7 +790,7 @@
 
   const clientSlugs = C.clients.map((c) => c.slug);
   const COMPLETIONS = [
-    "help", "whoami", "git diff 2025..2026", "ls clients", "ls clients --builds", "ls clients --consultations",
+    "help", "my-bio", "git diff 2025..2026", "ls clients", "ls clients --builds", "ls clients --consultations",
     "open templates", "open community", "open apps", "brew list --learned", "cat lessons.txt", "stats", "achievements",
     "date", "hire imene", "sudo make me a system", "coffee", "ls -a", "clear", "exit",
     ...clientSlugs.map((s) => "cd clients/" + s),
@@ -782,9 +798,9 @@
 
   const HELP = [
     ["help", "this list"],
-    ["whoami", "who runs this machine"],
+    ["my-bio", "who runs this machine"],
     ["git diff 2025..2026", "what changed this year"],
-    ["ls clients", "28 major clients, add --builds or --consultations"],
+    ["ls clients", "28 major clients of 350+, add --builds or --consultations"],
     ["cd clients/<industry>", "open one case card (tab completes)"],
     ["open templates", "the template shelf"],
     ["open community", "teaching an Arabic-speaking community"],
@@ -820,7 +836,7 @@
       print(`<table>${HELP.map(([a, b]) => `<tr><td class="help-cmd">${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table>`);
       return;
     }
-    if (c === "whoami") return openFromTerminal("whoami");
+    if (c === "my-bio" || c === "cat my-bio" || c === "whoami") return openFromTerminal("whoami");
     if (c === "git diff 2025..2026" || c === "git diff") return openFromTerminal("shift");
     if (c === "ls clients" || c === "cd clients" || c === "open clients") return openFromTerminal("clients");
     if (c === "ls clients --builds") return openFromTerminal("clients", { filter: "build" });
@@ -853,14 +869,14 @@
       tryFinale({ via: "type" }); return;
     }
     if (c === "hire imene") {
-      printText(C.replies.hire[0], "dim");
-      setTimeout(() => print(`→ ${link()}`), reduced ? 0 : 700);
+      printText("opening the chat. pick your path on the right.", "dim");
+      chat.open(true);
       return;
     }
     if (c === "sudo make me a system") { print(esc(C.replies.sudo).replace(esc(C.site.urlLabel), link()), "ok"); return; }
     if (c === "coffee") { printText(C.replies.coffee); return; }
     if (c === "ls" || c === "ls -a" || c === "ls -la" || c === "ls -al") {
-      const files = ["whoami", "the-shift", "clients/", "templates/", "community/", "skills", "lessons.txt", "apps/", unlocked() ? "birthday" : "birthday (locked)"];
+      const files = ["my-bio", "the-shift", "clients/", "templates/", "community/", "skills", "lessons.txt", "apps/", unlocked() ? "birthday" : "birthday (locked)"];
       if (c !== "ls") files.unshift(".easter-egg");
       print(files.map((f) => f.startsWith(".") ? `<span class="acc">${esc(f)}</span>` : esc(f)).join("   "));
       return;
@@ -1039,19 +1055,28 @@
   /* ---------- terminal window controls: close, minimize, maximize, drag ---------- */
   const termCtl = (function () {
     const term = $("#terminal"), bar = $(".term-bar", term);
-    const minB = $("#termMinBtn"), maxB = $("#termMaxBtn"), dockB = $("#termDockBtn");
+    const minB = $("#termMinBtn"), maxB = $("#termMaxBtn"), dockB = $("#termDockBtn"), reopenB = $("#termReopen");
+    $("#termReopenIcon").innerHTML = icon("square-terminal", 26);
     dockB.innerHTML = icon("square-terminal", 16) + "<span>Terminal</span>";
     dockB.setAttribute("aria-label", "Show terminal");
 
     function show() {
       term.hidden = false;
+      reopenB.hidden = true;
       dockB.setAttribute("aria-pressed", "true");
+      dockB.setAttribute("aria-label", "Show terminal");
     }
     function hide() {
       if (finaleActive) return;
       term.hidden = true;
+      reopenB.hidden = false;
       dockB.setAttribute("aria-pressed", "false");
-      dockB.focus({ preventScroll: true });
+      dockB.setAttribute("aria-label", "Reopen terminal");
+      reopenB.focus({ preventScroll: true });
+    }
+    function reopen() {
+      show(); setMin(false);
+      input.focus({ preventScroll: true });
     }
     function setMin(min) {
       term.classList.toggle("min", min);
@@ -1081,9 +1106,14 @@
     minB.addEventListener("click", () => setMin(!term.classList.contains("min")));
     maxB.addEventListener("click", toggleMax);
     bar.addEventListener("dblclick", (e) => { if (!e.target.closest("button")) toggleMax(); });
-    dockB.addEventListener("click", () => {
-      show(); setMin(false);
-      input.focus({ preventScroll: true });
+    dockB.addEventListener("click", reopen);
+    reopenB.addEventListener("click", reopen);
+    // ` (backtick) or Ctrl+` reopens it from anywhere, unless the visitor is typing in a field
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "`" || !term.hidden) return;
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      e.preventDefault(); reopen();
     });
 
     // drag by the title bar (desktop only)
@@ -1114,6 +1144,109 @@
     return { show, reset };
   })();
 
+  /* ---------- "work with me" chat ---------- */
+  const chat = (function () {
+    const K = C.chat;
+    const btn = $("#chatBtn"), panel = $("#chatPanel"), log = $("#chatLog"), choices = $("#chatChoices");
+    const teaser = $("#chatTeaser");
+    let opened = false, teaserTimer = 0;
+
+    const wish = $("#wishBtn");
+    wish.href = C.wish.href;
+    $("#wishIcon").innerHTML = icon("party-popper", 18);
+    $("#wishLabel").textContent = C.wish.label;
+    wish.setAttribute("aria-label", C.wish.label + " (opens a form in a new tab)");
+    wish.addEventListener("click", () => { confetti(); sound.blip(880); });
+
+    $("#chatBtnIcon").innerHTML = icon("message-circle", 20);
+    $("#chatBtnLabel").textContent = K.button;
+    $("#chatTitle").textContent = K.title;
+    $("#chatStatus").textContent = K.status;
+    $("#chatClose").innerHTML = icon("x", 16);
+    $("#chatTeaserX").innerHTML = icon("x", 12);
+    $("#chatTeaserText").textContent = K.teaser;
+
+    function msg(html, who) {
+      const d = document.createElement("div");
+      d.className = "msg " + (who || "them");
+      d.innerHTML = html;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+      return d;
+    }
+    function typing() {
+      const d = msg('<span class="dots"><i></i><i></i><i></i></span>', "them typing");
+      return new Promise((r) => setTimeout(() => { d.remove(); r(); }, reduced ? 0 : 650));
+    }
+    function showChoices() {
+      choices.innerHTML = K.paths.map((p) =>
+        `<button type="button" class="chat-choice" data-path="${p.id}">${icon(p.icon, 16)}<span>${esc(p.choice)}</span></button>`
+      ).join("");
+    }
+    async function start() {
+      log.innerHTML = ""; choices.innerHTML = "";
+      for (const line of K.greeting) { await typing(); msg(esc(line)); }
+      showChoices();
+      const first = $(".chat-choice", choices);
+      first && first.focus({ preventScroll: true });
+    }
+    async function pick(id) {
+      const p = K.paths.find((x) => x.id === id);
+      if (!p) return;
+      choices.innerHTML = "";
+      msg(esc(p.choice), "me");
+      sound.blip(560);
+      await typing();
+      msg(esc(p.reply));
+      await typing();
+      const cta = msg(`<a class="btn chat-cta" href="${esc(p.href)}" target="_blank" rel="noopener">${esc(p.cta)} ${icon("arrow-right", 14)}</a>`, "them cta");
+      if (p.id === "birthday") $("a", cta).addEventListener("click", () => confetti());
+      choices.innerHTML = `<button type="button" class="chat-restart">${esc(K.restart)}</button>`;
+      $("a", cta).focus({ preventScroll: true });
+    }
+
+    function open(fromTerminal) {
+      hideTeaser(true);
+      panel.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      btn.classList.add("active");
+      if (!opened) { opened = true; start(); }
+      else { const f = panel.querySelector(".chat-choice, .chat-cta, .chat-restart"); f && f.focus({ preventScroll: true }); }
+      if (!fromTerminal) sound.blip(620);
+    }
+    function close() {
+      panel.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+      btn.classList.remove("active");
+      btn.focus({ preventScroll: true });
+    }
+    function hideTeaser(forGood) {
+      clearTimeout(teaserTimer);
+      teaser.hidden = true;
+      if (forGood) store.set("chatTeaser", true);
+    }
+
+    btn.addEventListener("click", () => (panel.hidden ? open() : close()));
+    $("#chatClose").addEventListener("click", close);
+    $("#chatTeaserX").addEventListener("click", (e) => { e.stopPropagation(); hideTeaser(true); });
+    teaser.addEventListener("click", (e) => { if (!e.target.closest("button")) open(); });
+    choices.addEventListener("click", (e) => {
+      const c = e.target.closest(".chat-choice");
+      if (c) return pick(c.dataset.path);
+      if (e.target.closest(".chat-restart")) start();
+    });
+
+    return {
+      open, close,
+      isOpen: () => !panel.hidden,
+      // gentle nudge a few seconds after the desktop appears, once per visitor
+      nudge() {
+        if (OG || store.get("chatTeaser", false)) return;
+        teaserTimer = setTimeout(() => { if (panel.hidden) teaser.hidden = false; }, 6000);
+      },
+    };
+  })();
+
   /* ---------- boot ---------- */
   let booted = false;
 
@@ -1137,6 +1270,7 @@
     if (h >= 0 && h < 5) setTimeout(() => earn("night-owl"), 900);
     if (!isMobile() && !OG) input.focus({ preventScroll: true });
     resetIdle();
+    chat.nudge();
   }
 
   async function boot(force) {

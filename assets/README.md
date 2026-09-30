@@ -4,7 +4,7 @@ Drop these files in and the site picks them up. Anything missing shows a placeho
 
 | File | What it is | Notes |
 | --- | --- | --- |
-| `portrait.jpg` | Portrait for the whoami window | Square works best, shown as a 120px circle |
+| `portrait.jpg` | Portrait for the my-bio window | 3:4 portrait, shown as a 180px rounded rectangle |
 | `community-live.jpg` | A live community session | Around 16:8, shown full width |
 | `clients/<slug>.jpg` | Optional anonymized screenshot per full build | Blur names first. Slugs are listed below |
 | `apps/timetracker-screenshot.jpg`, `apps/screenhero-screenshot.jpg` | Optional app screenshots | 16:10. Hidden until the files exist. App icons are already in `apps/` |
