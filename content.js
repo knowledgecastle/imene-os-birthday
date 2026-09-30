@@ -243,7 +243,6 @@ window.CONTENT = {
           slug: "timetracker",
           name: "My Time Tracker",
           iconImage: "assets/apps/timetracker-icon.png",
-          screenshot: "assets/apps/timetracker-screenshot.jpg", // optional, hidden if missing
           tag: "Open source",
           platforms: ["macOS", "iPhone", "Apple Watch", "Widget + Live Activity"],
           tagline: "A time tracker that lives on every Apple screen I own, with Notion as its memory.",
@@ -272,7 +271,6 @@ window.CONTENT = {
           slug: "screenhero",
           name: "ScreenHero",
           iconImage: "assets/apps/screenhero-icon.png",
-          screenshot: "assets/apps/screenhero-screenshot.jpg", // optional, hidden if missing
           tag: "macOS menu bar app",
           platforms: ["macOS", "Swift", "on-device OCR"],
           tagline: "Capture a screenshot and it comes out presentation-ready.",

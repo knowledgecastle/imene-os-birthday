@@ -564,7 +564,6 @@ body.finale .desktop { z-index: 50; }
 .app-head .tag { margin: 0; }
 .app-icon { width: 56px; height: 56px; flex: none; border-radius: 13px; object-fit: cover; filter: drop-shadow(0 4px 10px rgba(0,0,0,.2)); }
 .app-icon.ph { padding: 0; color: var(--accent); }
-.app-shot { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); margin-bottom: 12px; }
 .app-tagline { color: var(--ink) !important; font-weight: 500; }
 .app .list { flex: 1; margin-bottom: 14px; }
 .app .list li { font-size: 13.5px; }

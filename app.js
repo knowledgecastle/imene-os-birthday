@@ -797,7 +797,6 @@
         `<article class="app">` +
         `<header class="app-head">${a.iconImage ? pic(a.iconImage, "app-icon", a.name + " app icon") : `<span class="app-icon app-tile">${icon(a.iconName || "app-window", 28)}</span>`}` +
         `<div><h3>${esc(a.name)}</h3><span class="tag">${esc(a.tag)}</span></div></header>` +
-        (a.screenshot ? `<img class="app-shot" src="${esc(a.screenshot)}" alt="${esc(a.name)} screenshot" loading="lazy">` : "") +
         `<p class="app-tagline">${esc(a.tagline)}</p>` +
         `<div class="langs">${a.platforms.map((x) => `<span class="chip">${esc(x)}</span>`).join("")}</div>` +
         `<ul class="list">${a.points.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
@@ -805,11 +804,6 @@
         `</article>`
       ).join("") + `</div>`;
     wirePics(body, () => icon("app-window", 28));
-    // screenshots are optional: hide them quietly until the files exist
-    body.querySelectorAll(".app-shot").forEach((img) => {
-      const hide = () => img.remove();
-      if (img.complete && img.naturalWidth === 0) hide(); else img.addEventListener("error", hide, { once: true });
-    });
   }
 
   function shareHTML() {
