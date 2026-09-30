@@ -66,8 +66,8 @@ window.CONTENT = {
     shift: {
       icon: "git-compare",
       label: "the-shift",
-      title: "git diff 2025..2026",
-      command: "git diff 2025..2026",
+      title: "the shift",
+      command: "the shift",
       summary: "3 files changed, 3 insertions(+), 3 deletions(-). The whole year in one diff.",
       rows: [
         {
@@ -159,12 +159,6 @@ window.CONTENT = {
         { text: "Top Creator", label: "on Notion's marketplace, April 2026" },
       ],
       text: "Spotted at PwC, FedEx, PepsiCo, Porsche, TIME and TripAdvisor, and on campuses from Berkeley to NUS Singapore. The most loved one: a monthly budget tracker, because people want one clear job done well.",
-      newThisYear: [
-        "P1.express task system",
-        "a gamified prayer tracker",
-        "a behaviour-design system",
-        "an Etsy shop fed by a listing tool I built myself",
-      ],
     },
 
     community: {
@@ -174,11 +168,12 @@ window.CONTENT = {
       command: "open community",
       summary: "Teaching freelancing, Notion, automation and AI to an Arabic-speaking community.",
       picture: "assets/community-live.jpg",
+      // same link as the chat's freelancing path
+      cta: { label: "Join the 3S Freelance Community", href: "https://www.skool.com/3s-freelance-community-8306/about" },
       stats: [
-        { value: 5, suffix: "+", label: "new courses launched" },
-        { value: 100, suffix: "+", label: "hours of video delivered" },
+        { value: 10, suffix: "+", label: "courses" },
+        { value: 200, suffix: "+", label: "hours of video delivered" },
         { value: 150, suffix: "", label: "members, currently" },
-        { value: 449, suffix: "", label: "people at one live session, 183 stayed past two hours" },
       ],
       text: "I teach freelancing, Notion, automation and AI to an Arabic-speaking community.",
     },
@@ -320,9 +315,9 @@ window.CONTENT = {
   */
   clients: [
     { slug: "ecommerce", industry: "Ecommerce brand", icon: "shopping-bag", tag: "Full build", type: "build",
-      built: "Moved six departments off two separate tools into one operating system for supply chain and finance.",
+      built: "Moved every department, all six of them, off two separate tools into one operating system for the whole company.",
       change: "Leadership reads one dashboard instead of chasing updates.",
-      preview: {title:  "Operations OS", hubs:  ["Supply chain", "Finance", "Customer care", "Leadership"], cols:  ["Department", "Status"], rows:  [["Supply chain", "Live", "done"], ["Customer care", "Live", "done"], ["Leadership view", "One dashboard", "doing"]]} },
+      preview: {title: "Company OS", hubs: ["All departments", "Projects", "SOPs", "Dashboards"], cols: ["Moved in", "Status"], rows: [["6 departments", "Live", "done"], ["2 old tools", "Retired", "done"], ["Leadership view", "One dashboard", "done"]]} },
     { slug: "venture-biotech", industry: "Venture capital and biotech", icon: "flask-conical", tag: "Full build", type: "build",
       built: "A deadline-driven operating system for deal flow, portfolio and investor work.",
       change: "One source of truth, live when the team needed it.",
@@ -433,14 +428,42 @@ window.CONTENT = {
       preview: {title:  "Student Workspaces", hubs:  ["Research", "Coursework", "Teams", "Wiki"], cols:  ["Campus", "Workspace"], rows:  [["Campus 1", "Research group", "done"], ["Campus 2", "Student club", "done"], ["Campus 3", "Lab team", "doing"]]} },
   ],
 
+  // Client map (Clients window, Map tab). Countries and cities only, never client names.
+  // Every client becomes one pin, placed near a random city of its country.
+  // Change a count or add a city and the map redraws itself. seed keeps the layout stable.
+  clientMap: {
+    title: "where my 350+ clients are",
+    note: "Each pin is one client, placed near their city. Work happens remotely, across time zones.",
+    seed: 2026,
+    countries: [
+      { country: "United States", count: 105, spread: 1.6, cities: [["New York", 40.71, -74.01], ["Boston", 42.36, -71.06], ["Miami", 25.76, -80.19], ["Atlanta", 33.75, -84.39], ["Chicago", 41.88, -87.63], ["Austin", 30.27, -97.74], ["Dallas", 32.78, -96.8], ["Houston", 29.76, -95.37], ["Denver", 39.74, -104.99], ["Phoenix", 33.45, -112.07], ["Los Angeles", 34.05, -118.24], ["San Diego", 32.72, -117.16], ["San Francisco", 37.77, -122.42], ["Seattle", 47.61, -122.33], ["Portland", 45.52, -122.68], ["Minneapolis", 44.98, -93.27], ["Nashville", 36.16, -86.78], ["Washington DC", 38.91, -77.04], ["Philadelphia", 39.95, -75.17], ["Salt Lake City", 40.76, -111.89]] },
+      { country: "Canada", count: 40, spread: 1.2, cities: [["Toronto", 43.65, -79.38], ["Montreal", 45.5, -73.57], ["Vancouver", 49.28, -123.12], ["Calgary", 51.05, -114.07], ["Ottawa", 45.42, -75.7], ["Edmonton", 53.55, -113.49], ["Winnipeg", 49.9, -97.14], ["Halifax", 44.65, -63.57]] },
+      { country: "France", count: 35, spread: 0.9, cities: [["Paris", 48.86, 2.35], ["Lyon", 45.76, 4.84], ["Marseille", 43.3, 5.37], ["Bordeaux", 44.84, -0.58], ["Toulouse", 43.6, 1.44], ["Lille", 50.63, 3.06], ["Nantes", 47.22, -1.55], ["Nice", 43.7, 7.26]] },
+      { country: "Brazil", count: 30, spread: 1.5, cities: [["São Paulo", -23.55, -46.63], ["Rio de Janeiro", -22.91, -43.17], ["Belo Horizonte", -19.92, -43.94], ["Brasília", -15.79, -47.88], ["Curitiba", -25.43, -49.27], ["Porto Alegre", -30.03, -51.23], ["Recife", -8.05, -34.88], ["Salvador", -12.97, -38.5]] },
+      { country: "Australia", count: 30, spread: 1.2, cities: [["Sydney", -33.87, 151.21], ["Melbourne", -37.81, 144.96], ["Brisbane", -27.47, 153.03], ["Perth", -31.95, 115.86], ["Adelaide", -34.93, 138.6], ["Gold Coast", -28.02, 153.4]] },
+      { country: "Mexico", count: 25, spread: 1.0, cities: [["Mexico City", 19.43, -99.13], ["Guadalajara", 20.67, -103.35], ["Monterrey", 25.69, -100.32], ["Puebla", 19.04, -98.21], ["Mérida", 20.97, -89.62], ["Tijuana", 32.51, -117.04]] },
+      { country: "Netherlands", count: 25, spread: 0.3, cities: [["Amsterdam", 52.37, 4.9], ["Rotterdam", 51.92, 4.48], ["Utrecht", 52.09, 5.12], ["The Hague", 52.07, 4.3], ["Eindhoven", 51.44, 5.47]] },
+      { country: "Belgium", count: 20, spread: 0.25, cities: [["Brussels", 50.85, 4.35], ["Antwerp", 51.22, 4.4], ["Ghent", 51.05, 3.72], ["Liège", 50.63, 5.57], ["Bruges", 51.21, 3.22]] },
+      { country: "United Kingdom", count: 9, spread: 0.6, cities: [["London", 51.51, -0.13], ["Manchester", 53.48, -2.24], ["Edinburgh", 55.95, -3.19], ["Bristol", 51.45, -2.59], ["Birmingham", 52.49, -1.89]] },
+      { country: "Germany", count: 6, spread: 0.6, cities: [["Berlin", 52.52, 13.4], ["Munich", 48.14, 11.58], ["Hamburg", 53.55, 9.99], ["Frankfurt", 50.11, 8.68]] },
+      { country: "Spain", count: 5, spread: 0.6, cities: [["Madrid", 40.42, -3.7], ["Barcelona", 41.39, 2.17], ["Valencia", 39.47, -0.38]] },
+      { country: "South Africa", count: 5, spread: 0.6, cities: [["Johannesburg", -26.2, 28.05], ["Cape Town", -33.92, 18.42], ["Durban", -29.86, 31.02]] },
+      { country: "Italy", count: 3, spread: 0.5, cities: [["Milan", 45.46, 9.19], ["Rome", 41.9, 12.5]] },
+      { country: "United Arab Emirates", count: 3, spread: 0.3, cities: [["Dubai", 25.2, 55.27], ["Abu Dhabi", 24.45, 54.38]] },
+      { country: "Singapore", count: 3, spread: 0.05, cities: [["Singapore", 1.35, 103.82]] },
+      { country: "New Zealand", count: 3, spread: 0.5, cities: [["Auckland", -36.85, 174.76], ["Wellington", -41.29, 174.78]] },
+      { country: "Senegal", count: 3, spread: 0.3, cities: [["Dakar", 14.72, -17.47], ["Thiès", 14.79, -16.93]] },
+    ],
+  },
+
   stats: [
     ["clients served", "350+"],
     ["major clients featured", "28"],
     ["industries", "25+"],
     ["template downloads", "21,000+"],
     ["organizations using templates", "1,600+"],
-    ["new courses", "5+"],
-    ["hours of video", "100+"],
+    ["courses", "10+"],
+    ["hours of video", "200+"],
     ["community members", "150"],
     ["custom Claude skills", "20+"],
     ["apps and dashboards vibecoded", "3"],

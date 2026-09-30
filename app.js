@@ -540,7 +540,7 @@
   function renderShift(body) {
     const w = W.shift;
     body.innerHTML =
-      `<p class="kicker">$ git diff 2025..2026 --stat</p>` +
+      `<p class="kicker">$ the shift</p>` +
       w.rows.map((r) =>
         `<div class="shift-row">` +
         `<div class="card before"><strong>${esc(r.before.title)}</strong><small>${esc(r.before.note)}</small></div>` +
@@ -558,15 +558,28 @@
     let selected = opts.slug || null;
 
     body.innerHTML =
+      `<div class="view-switch" role="group" aria-label="Clients view">` +
+      `<button type="button" class="vs-btn" data-view="folders">${icon("folder", 14)}Folders</button>` +
+      `<button type="button" class="vs-btn" data-view="map">${icon("map-pin", 14)}Map</button></div>` +
       `<div class="explorer-head"><div class="chips" role="group" aria-label="Filter clients">` +
       w.filters.map((f) => `<button type="button" class="chip-btn" data-f="${f.id}">${esc(f.label)}</button>`).join("") +
       `</div><span class="counter">${esc(w.counter)}</span></div>` +
-      `<div class="explorer"><div class="folders" role="group" aria-label="Industry folders"></div><div class="detail" aria-live="polite"></div></div>`;
+      `<div class="explorer"><div class="folders" role="group" aria-label="Industry folders"></div><div class="detail" aria-live="polite"></div></div>` +
+      `<div class="mapview" hidden></div>`;
 
-    const folders = $(".folders", body), detail = $(".detail", body);
+    const folders = $(".folders", body), detail = $(".detail", body), mapview = $(".mapview", body);
+    let view = opts.view || "folders", mapDrawn = false;
+    function setView(v) {
+      view = v;
+      body.querySelectorAll(".vs-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+      $(".explorer", body).hidden = v !== "folders";
+      $(".explorer-head .chips", body).style.display = v === "folders" ? "" : "none";
+      mapview.hidden = v !== "map";
+      if (v === "map" && !mapDrawn) { mapDrawn = true; drawClientMap(mapview); }
+    }
 
     function drawFolders() {
-      body.querySelectorAll(".chip-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter)));
+      body.querySelectorAll(".chip-btn[data-f]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter)));
       const list = C.clients.filter((c) => filter === "all" || c.type === filter);
       folders.innerHTML = list.map((c) =>
         `<button type="button" class="folder" data-slug="${c.slug}" aria-pressed="${c.slug === selected}">` +
@@ -607,7 +620,9 @@
     }
 
     body.addEventListener("click", (e) => {
-      const chip = e.target.closest(".chip-btn");
+      const vs = e.target.closest(".vs-btn");
+      if (vs) { setView(vs.dataset.view); sound.blip(520); return; }
+      const chip = e.target.closest(".chip-btn[data-f]");
       if (chip) { filter = chip.dataset.f; drawFolders(); return; }
       const f = e.target.closest(".folder");
       if (f) { select(f.dataset.slug, true); const again = folders.querySelector(`[data-slug="${f.dataset.slug}"]`); again && again.focus(); }
@@ -615,11 +630,78 @@
 
     drawFolders();
     if (selected) select(selected); else drawDetail();
+    setView(view);
 
     return (o) => {
-      if (o.filter) { filter = o.filter; drawFolders(); }
-      if (o.slug) { if (o.slug && !C.clients.find((c) => c.slug === o.slug && (filter === "all" || c.type === filter))) filter = "all"; select(o.slug); }
+      if (o.view) setView(o.view);
+      if (o.filter) { filter = o.filter; setView("folders"); drawFolders(); }
+      if (o.slug) { setView("folders"); if (o.slug && !C.clients.find((c) => c.slug === o.slug && (filter === "all" || c.type === filter))) filter = "all"; select(o.slug); }
     };
+  }
+
+  // Dotted world map: one pin per client, scattered near real cities (data: map.js + content.clientMap).
+  function clientPins() {
+    const D = window.WORLD_DOTS, M = C.clientMap;
+    const land = new Set(D.dots.split(",").map((p) => p.split(".").map((n) => parseInt(n, 36)).join(",")));
+    let a = M.seed >>> 0; // mulberry32, so the layout is the same on every visit
+    const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const proj = (lat, lon) => [(lon + 180) / D.step, (D.top - lat) / D.step];
+    const onLand = ([x, y]) => land.has(Math.round(x) + "," + Math.round(y));
+    const pins = [];
+    for (const c of M.countries) {
+      for (let n = 0; n < c.count; n++) {
+        const [city, lat, lon] = c.cities[Math.floor(rnd() * c.cities.length)];
+        let xy = proj(lat, lon);
+        for (let t = 0; t < 12; t++) {
+          const r = c.spread * Math.sqrt(rnd()), ang = rnd() * Math.PI * 2;
+          const cand = proj(lat + r * Math.sin(ang), lon + r * Math.cos(ang) * 1.3);
+          if (onLand(cand)) { xy = cand; break; }
+        }
+        pins.push({ city, country: c.country, x: xy[0], y: xy[1] });
+      }
+    }
+    return pins;
+  }
+
+  function drawClientMap(box) {
+    const D = window.WORLD_DOTS, M = C.clientMap;
+    if (!D) { box.innerHTML = '<p class="kicker">map data missing</p>'; return; }
+    const dots = D.dots.split(",").map((p) => p.split(".").map((n) => parseInt(n, 36)));
+    const pins = clientPins();
+    const countries = M.countries.slice().sort((a, b) => b.count - a.count);
+    box.innerHTML =
+      `<p class="kicker">$ ls clients --map · ${esc(M.title)}</p>` +
+      `<div class="map-wrap"><svg class="world" viewBox="0 0 ${D.cols} ${D.rows}" role="img" aria-label="World map with ${pins.length} client pins across ${countries.length} countries, most in the United States, Canada, France, Brazil and Australia">` +
+      `<g class="land" aria-hidden="true">${dots.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".34"/>`).join("")}</g>` +
+      `<g class="pins" aria-hidden="true">${pins.map((p, i) =>
+        `<g class="pin${i % 9 === 0 ? " live" : ""}" data-i="${i}" data-country="${esc(p.country)}" transform="translate(${p.x.toFixed(2)} ${p.y.toFixed(2)})">` +
+        (i % 9 === 0 ? `<circle class="pulse" r=".8"/>` : "") + `<circle class="dot" r=".55"/><circle class="hit" r="1.1"/></g>`).join("")}</g></svg>` +
+      `<div class="map-tip" hidden></div></div>` +
+      `<div class="map-legend" role="group" aria-label="Highlight a country">${countries.map((c) =>
+        `<button type="button" class="chip-btn" data-country="${esc(c.country)}" aria-pressed="false">${esc(c.country)} <b>${c.count}</b></button>`).join("")}</div>` +
+      `<p class="map-note">${esc(M.note)}</p>`;
+
+    const svg = $(".world", box), tip = $(".map-tip", box), wrap = $(".map-wrap", box);
+    function show(g) {
+      const p = pins[+g.dataset.i];
+      tip.innerHTML = `<strong>${esc(p.city)} area</strong><small>${esc(p.country)}</small>`;
+      const r = g.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+      tip.style.left = (r.left + r.width / 2 - w.left) + "px";
+      tip.style.top = (r.top - w.top) + "px";
+      tip.hidden = false;
+    }
+    svg.addEventListener("pointerover", (e) => { const g = e.target.closest(".pin"); if (g) show(g); });
+    svg.addEventListener("pointerleave", () => { tip.hidden = true; });
+    svg.addEventListener("click", (e) => { const g = e.target.closest(".pin"); if (g) show(g); });
+    $(".map-legend", box).addEventListener("click", (e) => {
+      const b = e.target.closest(".chip-btn");
+      if (!b) return;
+      const on = b.getAttribute("aria-pressed") !== "true";
+      box.querySelectorAll(".map-legend .chip-btn").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", String(on));
+      svg.classList.toggle("focus", on);
+      svg.querySelectorAll(".pin").forEach((g) => g.classList.toggle("dim", on && g.dataset.country !== b.dataset.country));
+    });
   }
 
   // A tiny Notion-style window of what was built: sidebar hubs + a table or a board.
@@ -651,7 +733,6 @@
         `<span class="tpl-cta">${esc(w.cta.label)} ${icon("arrow-right", 13)}</span></span></a>`
       ).join("") +
       `</div>` +
-      `<p class="kicker" style="margin-top:18px">new this year</p><ul class="list">${w.newThisYear.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<p style="margin:18px 0 0"><a class="btn" href="${esc(w.cta.href)}" target="_blank" rel="noopener">${icon("layout-template", 15)}${esc(w.cta.all)}</a></p>`;
     wirePics(body, () => icon("layout-template", 26));
     countUp(body);
@@ -659,7 +740,10 @@
 
   function renderCommunity(body) {
     const w = W.community;
-    body.innerHTML = pic(w.picture, "hero-pic", "A live community session") + statsHTML(w.stats) + `<p>${esc(w.text)}</p>`;
+    body.innerHTML =
+      `<a class="hero-link" href="${esc(w.cta.href)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${pic(w.picture, "hero-pic", "")}</a>` +
+      statsHTML(w.stats) + `<p>${esc(w.text)}</p>` +
+      `<p style="margin:16px 0 0"><a class="btn" href="${esc(w.cta.href)}" target="_blank" rel="noopener">${icon("users", 15)}${esc(w.cta.label)} ${icon("arrow-right", 14)}</a></p>`;
     wirePics(body);
     countUp(body);
   }
@@ -790,7 +874,7 @@
 
   const clientSlugs = C.clients.map((c) => c.slug);
   const COMPLETIONS = [
-    "help", "my-bio", "git diff 2025..2026", "ls clients", "ls clients --builds", "ls clients --consultations",
+    "help", "my-bio", "the shift", "ls clients", "ls clients --builds", "ls clients --consultations", "ls clients --map", "map",
     "open templates", "open community", "open apps", "brew list --learned", "cat lessons.txt", "stats", "achievements",
     "date", "hire imene", "sudo make me a system", "coffee", "ls -a", "clear", "exit",
     ...clientSlugs.map((s) => "cd clients/" + s),
@@ -799,8 +883,9 @@
   const HELP = [
     ["help", "this list"],
     ["my-bio", "who runs this machine"],
-    ["git diff 2025..2026", "what changed this year"],
+    ["the shift", "what changed this year"],
     ["ls clients", "28 major clients of 350+, add --builds or --consultations"],
+    ["ls clients --map", "where my clients are, on a map"],
     ["cd clients/<industry>", "open one case card (tab completes)"],
     ["open templates", "the template shelf"],
     ["open community", "teaching an Arabic-speaking community"],
@@ -837,10 +922,15 @@
       return;
     }
     if (c === "my-bio" || c === "cat my-bio" || c === "whoami") return openFromTerminal("whoami");
-    if (c === "git diff 2025..2026" || c === "git diff") return openFromTerminal("shift");
+    if (c === "the shift" || c === "the-shift" || c === "git diff 2025..2026") return openFromTerminal("shift");
     if (c === "ls clients" || c === "cd clients" || c === "open clients") return openFromTerminal("clients");
     if (c === "ls clients --builds") return openFromTerminal("clients", { filter: "build" });
     if (c === "ls clients --consultations") return openFromTerminal("clients", { filter: "consult" });
+    if (c === "ls clients --map" || c === "map" || c === "where") {
+      printText(`${C.clientMap.countries.reduce((n, c) => n + c.count, 0)} clients across ${C.clientMap.countries.length} countries. hover a pin.`, "dim");
+      openWindow("clients", { via: "type", opener: input, view: "map" });
+      return;
+    }
     if (c.startsWith("cd clients/")) {
       const slug = c.slice(11).replace(/\/$/, "");
       const cl = C.clients.find((x) => x.slug === slug);
