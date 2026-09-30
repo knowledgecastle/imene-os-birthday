@@ -207,7 +207,7 @@
     }
     function set(v, user) {
       on = v;
-      if (user) store.set("sound", on);
+      if (user) { try { sessionStorage.setItem("imeneos:sound", on ? "1" : "0"); } catch (e) { /* ignore */ } }
       render();
       if (on) {
         if (ensure()) ac.resume();
@@ -240,7 +240,14 @@
 
     return {
       toggle() { set(!on, true); },
-      init() { set(!OG && store.get("sound", M.autoplay !== false), false); },
+      // Music is on by default on every visit. Muting lasts only for the current visit (session),
+      // and the old saved-forever setting is cleared so nobody stays muted from an earlier visit.
+      init() {
+        try { localStorage.removeItem("imeneos:sound"); } catch (e) { /* ignore */ }
+        let muted = false;
+        try { muted = sessionStorage.getItem("imeneos:sound") === "0"; } catch (e) { /* ignore */ }
+        set(!OG && !muted && M.autoplay !== false, false);
+      },
       blip(f) { tone(f || 440, 0.12, 0.04); },
       tick() { tone(1800 + Math.random() * 400, 0.025, 0.012, "triangle"); },
     };
