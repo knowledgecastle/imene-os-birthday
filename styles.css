@@ -845,3 +845,28 @@ body.finale .desktop { z-index: 50; }
 .flip-inner { display: grid; min-height: 160px; height: 100%; }
 .face { position: relative; inset: auto; grid-area: 1 / 1; min-height: 160px; }
 .face p { font-size: 16px; }
+
+/* ---------- calmer scene so menus read clearly ---------- */
+.scene-img { inset: -30px; filter: blur(7px) saturate(.85) brightness(.9); }
+:root { --tint: linear-gradient(180deg, rgba(250, 240, 228, 0.42), rgba(246, 232, 216, 0.5)); --label-bg: rgba(252, 248, 242, 0.92); --tile: rgba(255, 251, 245, 0.88); }
+:root[data-theme="dark"] {
+  --tint: linear-gradient(180deg, rgba(14, 17, 22, 0.55), rgba(14, 17, 22, 0.72));
+  --label-bg: rgba(16, 19, 26, 0.88);
+  --tile: rgba(28, 31, 42, 0.86);
+  --tile-hover: rgba(40, 44, 58, 0.95);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tint: linear-gradient(180deg, rgba(14, 17, 22, 0.55), rgba(14, 17, 22, 0.72));
+    --label-bg: rgba(16, 19, 26, 0.88);
+    --tile: rgba(28, 31, 42, 0.86);
+    --tile-hover: rgba(40, 44, 58, 0.95);
+  }
+}
+.dots { opacity: .6; }
+.icon .label { font-weight: 500; padding: 3px 8px; box-shadow: 0 2px 8px -3px rgba(0, 0, 0, .35); }
+.rain { opacity: calc(var(--rain) * 0.35); }
+.scene-img { filter: blur(6px) saturate(.9) brightness(.92); }
+:root[data-theme="dark"] { --tint: linear-gradient(180deg, rgba(14, 17, 22, 0.42), rgba(14, 17, 22, 0.64)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tint: linear-gradient(180deg, rgba(14, 17, 22, 0.42), rgba(14, 17, 22, 0.64)); } }
+.og .chat { display: none; }

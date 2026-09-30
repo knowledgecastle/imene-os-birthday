@@ -10,6 +10,7 @@
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const params = new URLSearchParams(location.search);
   const OG = params.has("og");
+  if (OG) document.documentElement.classList.add("og");
 
   /* ---------- storage (always wrapped) ---------- */
   const store = {
@@ -1412,7 +1413,7 @@
   });
 
   /* ---------- init ---------- */
-  applyTheme(store.get("theme", null));
+  applyTheme(store.get("theme", "dark")); // dark is the default; the dock button switches and remembers
   sound.init();
   renderIcons();
   renderProgress();
