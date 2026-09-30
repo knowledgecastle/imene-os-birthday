@@ -1,5 +1,7 @@
 # imene.os
 
+Live at **https://birthday.thedigicrafters.com** (GitHub Pages, deployed by the Actions workflow on every push to main; DNS is a CNAME on Cloudflare, DNS only).
+
 My year (Sep 2025 to Sep 2026) as a tiny lofi operating system: a terminal in the middle, eight desktop icons, windows with stories, and a small game layer.
 
 Plain HTML, CSS and vanilla JS. No build step, no backend.
